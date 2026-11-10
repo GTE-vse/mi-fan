@@ -870,28 +870,43 @@ class Bridge:
         """返回当前版本号"""
         return {'version':'1.0.01','repo':'https://github.com/GTE-vse/mi-fan'}
     def check_update(self):
-        """请求 GitHub CDN 上的 version.json，比对版本号。前端按钮调。"""
+        """请求多个 CDN 上的 version.json，比对版本号。带系统代理支持。"""
         import urllib.request
         import urllib.error
-        CDN = 'https://cdn.jsdelivr.net/gh/GTE-vse/mi-fan@main/releases/version.json'
         LOCAL = '1.0.01'
-        try:
-            req = urllib.request.Request(CDN, headers={'User-Agent':'MiFan/Updater'})
-            with urllib.request.urlopen(req, timeout=8) as resp:
-                data = json.loads(resp.read().decode('utf-8'))
-            remote = data.get('version','')
-            newer = self._version_newer(remote, LOCAL)
-            return {
-                'current': LOCAL,
-                'latest': remote,
-                'has_update': newer,
-                'notes': data.get('notes',''),
-                'download_url': data.get('download_url',''),
-                'mandatory': data.get('mandatory',False),
-                'ok': True
-            }
-        except (urllib.error.URLError, urllib.error.HTTPError, json.JSONDecodeError, Exception) as e:
-            return {'ok': False, 'error': str(e), 'current': LOCAL}
+        # 多源 fallback：国内镜像优先 → jsdelivr → 官方 raw
+        REPO = 'GTE-vse/mi-fan'
+        PATHS = [
+            f'https://ghproxy.com/https://raw.githubusercontent.com/{REPO}/main/releases/version.json',
+            f'https://cdn.jsdelivr.net/gh/{REPO}@main/releases/version.json',
+            f'https://raw.githubusercontent.com/{REPO}/main/releases/version.json',
+            f'https://mirror.ghproxy.com/https://raw.githubusercontent.com/{REPO}/main/releases/version.json',
+        ]
+        # 用系统代理（用户开 Clash/V2Ray 自动生效）
+        proxy_handler = urllib.request.ProxyHandler(urllib.request.getproxies())
+        opener = urllib.request.build_opener(proxy_handler)
+        last_err = None
+        for CDN in PATHS:
+            try:
+                req = urllib.request.Request(CDN, headers={'User-Agent':'MiFan/Updater'})
+                with opener.open(req, timeout=10) as resp:
+                    data = json.loads(resp.read().decode('utf-8'))
+                remote = data.get('version','')
+                newer = self._version_newer(remote, LOCAL)
+                return {
+                    'current': LOCAL,
+                    'latest': remote,
+                    'has_update': newer,
+                    'notes': data.get('notes',''),
+                    'download_url': data.get('download_url',''),
+                    'mandatory': data.get('mandatory',False),
+                    'ok': True,
+                    'cdn': CDN.split('/')[2]  # 命中的 CDN 域名
+                }
+            except Exception as e:
+                last_err = str(e)
+                continue  # 试下一个源
+        return {'ok': False, 'error': last_err or '所有更新源均不可达', 'current': LOCAL}
     @staticmethod
     def _version_newer(remote, local):
         """语义版本号比较：1.0.02 > 1.0.01"""
