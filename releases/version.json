@@ -1,0 +1,6 @@
+{
+  "version": "1.0.01",
+  "download_url": "https://github.com/GTE-vse/mi-fan/releases/download/v1.0.01/MiFanSetup.exe",
+  "notes": "· 托盘图标丢失修复\n· 启动闪屏动画\n· 设备连接页左右双栏全新排版\n· 运行日志默认过滤开发者调试信息\n· 最小窗口尺寸锁定 1050×730",
+  "mandatory": false
+}

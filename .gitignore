@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.spec
+build/
+dist/
+*.egg-info/
+
+# PyInstaller
+*.manifest
+*.toc
+
+# Node / Frontend
+node_modules/
+frontend/dist/
+frontend/build/
+
+# 大文件产物（安装包/可执行程序）
+*.exe
+*.dll
+*.lib
+*.pyd
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# 运行时数据
+config.json
+logs/
+*.log
+
+# 系统
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# LibreHardwareMonitor 独立目录（40+ DLL，用户自行下载）
+LibreHardwareMonitor/
